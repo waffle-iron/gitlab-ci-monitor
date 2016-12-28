@@ -14,7 +14,7 @@ GITLAB_PROJECT_ID = ENV['GITLAB_PROJECT_ID']
 LEDS = {
   red: 9,
   green: 10,
-  yellog: 11
+  yellow: 11
 }
 
 $logger = Logger.new STDOUT
