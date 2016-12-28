@@ -36,9 +36,9 @@ def check_build(last_build)
 
   status = last_build['status']
   led = case status
-        when 'running' then :yellow
         when 'success' then :green
-        else :red
+        when 'failed'  then :red
+        else :yellow
         end
 
   $logger.info { "Last build status is #{status}, turning #{led} led" }
