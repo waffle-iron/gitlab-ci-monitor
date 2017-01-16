@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'active_support/core_ext/numeric/time'
 require 'arduino_firmata'
 require 'dotenv'
 require 'httparty'
@@ -73,7 +74,8 @@ end
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize
+  def initialize(interval)
+    @interval = interval.to_i
     @logger = Logger.new STDOUT
     @logger.level = Logger::INFO unless ENV['DEBUG']
   end
@@ -90,7 +92,7 @@ class BuildMonitor
 
     loop do
       check_latest
-      wait 60
+      wait @interval
     end
   end
 
@@ -116,6 +118,6 @@ class BuildMonitor
 end
 
 if __FILE__ == $PROGRAM_NAME
-  monitor = BuildMonitor.new
+  monitor = BuildMonitor.new 2.minutes
   monitor.start
 end
