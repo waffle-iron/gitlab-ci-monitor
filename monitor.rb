@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'active_support/core_ext/object/inclusion'
 require 'active_support/core_ext/numeric/time'
 require 'arduino_firmata'
 require 'dotenv'
@@ -46,6 +47,8 @@ class LedMonitor
     yellow: 11
   }.freeze
 
+  BUZZER = 5
+
   def initialize(logger)
     @logger = logger
 
@@ -70,6 +73,13 @@ class LedMonitor
     @logger.debug { "Turning on #{led} leds" }
     @arduino.digital_write LEDS[led], true
   end
+
+  def buzz(duration = 0.5)
+    @logger.debug { "Buzzing for #{duration} sec" }
+    @arduino.digital_write BUZZER, true
+    sleep duration
+    @arduino.digital_write BUZZER, false
+  end
 end
 
 # Use LEDs to monitor the last build status.
@@ -78,6 +88,8 @@ class BuildMonitor
     @interval = interval.to_i
     @logger = Logger.new STDOUT
     @logger.level = Logger::INFO unless ENV['DEBUG']
+
+    @status = 'success'  # assume we are in a good state
   end
 
   def start
@@ -99,16 +111,30 @@ class BuildMonitor
   def check_latest
     latest_build = @build_fetcher.latest_build
 
-    status = latest_build['status']
-    led = case status
+    @prev_status = @status unless pending?
+    @status = latest_build['status']
+    led = case @status
           when 'success' then :green
           when 'failed'  then :red
           else :yellow
           end
 
-    @logger.info { "Last build status is #{status}, turning #{led} led" }
+    @logger.info { "Build status is #{@status}, turning #{led} led" }
     @monitor.all_off
     @monitor.turn_on led
+    @monitor.buzz if failed? && was_success?
+  end
+
+  def failed?
+    @status == 'failed'
+  end
+
+  def pending?
+    !@status.in? %w(success failed)
+  end
+
+  def was_success?
+    @prev_status == 'success'
   end
 
   def wait(seconds)
