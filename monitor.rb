@@ -3,6 +3,7 @@
 require 'active_support/core_ext/object/inclusion'
 require 'active_support/core_ext/numeric/time'
 require 'arduino_firmata'
+require 'colorize'
 require 'dotenv'
 require 'httparty'
 require 'logger'
@@ -33,7 +34,7 @@ class BuildFetcher
 
     # returned build are already sorted
     last_build = pipelines.find { |el| el['ref'] == branch }
-    @logger.debug { "Last build on #{branch}: #{last_build}" }
+    @logger.debug { "Last build on #{branch}: #{last_build.inspect.light_yellow}" }
 
     last_build
   end
@@ -70,7 +71,7 @@ class LedMonitor
   end
 
   def turn_on(led)
-    @logger.debug { "Turning on #{led} leds" }
+    @logger.debug { "Turning on #{led} led" }
     @arduino.digital_write LEDS[led], true
   end
 
@@ -119,7 +120,7 @@ class BuildMonitor
           else :yellow
           end
 
-    @logger.info { "Build status is #{@status}, turning #{led} led" }
+    @logger.info { "Build status is #{@status.colorize(led)}, turning on #{led} led" }
     @monitor.all_off
     @monitor.turn_on led
     @monitor.buzz if failed? && was_success?

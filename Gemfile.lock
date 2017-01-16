@@ -11,6 +11,7 @@ GEM
       event_emitter (>= 0.2.4)
       serialport (>= 1.1.0)
     args_parser (0.2.0)
+    colorize (0.8.1)
     concurrent-ruby (1.0.4)
     dotenv (2.1.1)
     event_emitter (0.2.5)
@@ -30,6 +31,7 @@ PLATFORMS
 DEPENDENCIES
   activesupport
   arduino_firmata
+  colorize
   dotenv
   httparty
 
