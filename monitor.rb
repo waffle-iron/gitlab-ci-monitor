@@ -120,10 +120,13 @@ class BuildMonitor
           else :yellow
           end
 
-    @logger.info { "Build status is #{@status.colorize(led)}, turning on #{led} led" }
+    @logger.info { "Build status is #{@status.colorize(led)}" }
     @monitor.all_off
     @monitor.turn_on led
-    @monitor.buzz if failed? && was_success?
+    if failed?
+      @monitor.buzz if was_success?
+      @logger.info { "Last commit: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
+    end
   end
 
   def failed?
