@@ -148,6 +148,7 @@ class BuildMonitor
 end
 
 if __FILE__ == $PROGRAM_NAME
-  monitor = BuildMonitor.new 2.minutes
+  interval = ARGV.shift || 2.minutes
+  monitor = BuildMonitor.new interval
   monitor.start
 end
