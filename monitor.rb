@@ -7,6 +7,7 @@ require 'colorize'
 require 'dotenv'
 require 'httparty'
 require 'logger'
+require 'null_logger'
 
 Dotenv.load
 
@@ -18,8 +19,8 @@ class BuildFetcher
   GITLAB_API_PRIVATE_TOKEN = ENV['GITLAB_API_PRIVATE_TOKEN']
   GITLAB_PROJECT_ID = ENV['GITLAB_PROJECT_ID']
 
-  def initialize(logger)
-    @logger = logger
+  def initialize(logger = nil)
+    @logger = logger || NullLogger.new
     @options = {
       headers: {
         'PRIVATE-TOKEN' => GITLAB_API_PRIVATE_TOKEN
@@ -50,8 +51,8 @@ class LedMonitor
 
   BUZZER = 5
 
-  def initialize(logger)
-    @logger = logger
+  def initialize(logger = nil)
+    @logger = logger || NullLogger.new
 
     @logger.debug { 'Connecting ...' }
     @arduino = ArduinoFirmata.connect
@@ -93,7 +94,7 @@ end
 
 # Use LEDs to monitor the last build status.
 class BuildMonitor
-  def initialize(interval)
+  def initialize(interval, logger = nil)
     @interval = interval.to_i
     @logger = Logger.new STDOUT
     @logger.level = Logger::INFO unless ENV['DEBUG']
