@@ -81,6 +81,14 @@ class LedMonitor
     sleep duration
     @arduino.digital_write BUZZER, false
   end
+
+  def rapid_buzz(count = 2, duration = 0.05)
+    @logger.debug { "Buzzing #{count} times" }
+    count.times do
+      buzz duration
+      sleep duration
+    end
+  end
 end
 
 # Use LEDs to monitor the last build status.
@@ -125,12 +133,19 @@ class BuildMonitor
     @monitor.turn_on led
     if failed?
       @monitor.buzz if was_success?
-      @logger.info { "Last commit: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
+      @logger.info { "Blame: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
+    elsif success? && was_failed?
+      @monitor.rapid_buzz
+      @logger.info { "Praise: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
     end
   end
 
   def failed?
     @status == 'failed'
+  end
+
+  def success?
+    @status == 'success'
   end
 
   def pending?
@@ -139,6 +154,10 @@ class BuildMonitor
 
   def was_success?
     @prev_status == 'success'
+  end
+
+  def was_failed?
+    @prev_status == 'failed'
   end
 
   def wait(seconds)
