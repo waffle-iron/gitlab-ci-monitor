@@ -19,6 +19,8 @@ class BuildFetcher
   GITLAB_API_PRIVATE_TOKEN = ENV['GITLAB_API_PRIVATE_TOKEN']
   GITLAB_PROJECT_ID = ENV['GITLAB_PROJECT_ID']
 
+  class ServerError < StandardError; end
+
   def initialize(logger = nil)
     @logger = logger || NullLogger.new
     @options = {
@@ -32,6 +34,12 @@ class BuildFetcher
   def latest_build(branch = 'develop')
     @logger.info { 'Fetching pipelines ...' }
     pipelines = self.class.get "/projects/#{@project_id}/pipelines", @options
+
+    if pipelines.code != 200
+      @logger.debug pipelines.inspect.light_yellow
+      message = "#{pipelines.message.red} (#{pipelines.code.to_s.red}): #{pipelines.body.underline}"
+      raise ServerError, message
+    end
 
     # returned build are already sorted
     last_build = pipelines.find { |el| el['ref'] == branch }
@@ -139,6 +147,10 @@ class BuildMonitor
       @monitor.rapid_buzz
       @logger.info { "Praise: #{latest_build['sha'][0, 8].light_yellow} by #{latest_build['user']['name'].light_blue}" }
     end
+  rescue BuildFetcher::ServerError => ex
+    @logger.error ex.message
+    @monitor.all_off
+    %i(yellow red).each { |ld| @monitor.turn_on ld }
   end
 
   def failed?
