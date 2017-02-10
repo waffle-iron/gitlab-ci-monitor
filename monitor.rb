@@ -16,8 +16,8 @@ class BuildFetcher
   include HTTParty
   base_uri 'https://gitlab.com/api/v3'
 
-  GITLAB_API_PRIVATE_TOKEN = ENV['GITLAB_API_PRIVATE_TOKEN']
-  GITLAB_PROJECT_ID = ENV['GITLAB_PROJECT_ID']
+  GITLAB_API_PRIVATE_TOKEN = ENV.fetch('GITLAB_API_PRIVATE_TOKEN')
+  GITLAB_PROJECT_ID = ENV.fetch('GITLAB_PROJECT_ID')
 
   class ServerError < StandardError; end
 
