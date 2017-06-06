@@ -11,6 +11,20 @@ require 'uri'
 
 Dotenv.load
 
+# Logger Multiplexer.
+# https://stackoverflow.com/questions/6407141/how-can-i-have-ruby-logger-log-output-to-stdout-as-well-as-file
+class MultiLogger
+  def initialize(*targets)
+    @targets = targets
+  end
+
+  %w(log debug info warn error fatal unknown).each do |m|
+    define_method(m) do |*args, &blk|
+      @targets.each { |t| t.send(m, *args, &blk) }
+    end
+  end
+end
+
 # Fetches build info from Gitlab API.
 class BuildFetcher
   BASE_URI = 'https://gitlab.com/api/v3'
@@ -110,8 +124,11 @@ end
 class BuildMonitor
   def initialize(interval, logger = nil)
     @interval = interval.to_i
-    @logger = Logger.new STDOUT
-    @logger.level = Logger::INFO unless ENV['DEBUG']
+
+    stdout_logger = Logger.new STDOUT
+    file_logger = Logger.new 'monitor.log', 'daily'
+    stdout_logger.level = file_logger.level = Logger::INFO unless ENV['DEBUG']
+    @logger = MultiLogger.new file_logger, stdout_logger
 
     @status = 'success'  # assume we are in a good state
   end
