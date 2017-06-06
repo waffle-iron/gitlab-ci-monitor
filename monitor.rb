@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'active_support/core_ext/object/inclusion'
-require 'active_support/core_ext/numeric/time'
 require 'arduino_firmata'
 require 'colorize'
 require 'dotenv'
@@ -164,7 +162,7 @@ class BuildMonitor
   end
 
   def pending?
-    !@status.in? %w(success failed)
+    !%w(success failed).include? @status
   end
 
   def was_success?
@@ -182,7 +180,7 @@ class BuildMonitor
 end
 
 if __FILE__ == $PROGRAM_NAME
-  interval = ARGV.shift || 2.minutes
+  interval = ARGV.shift || 120
   monitor = BuildMonitor.new interval
   monitor.start
 end
