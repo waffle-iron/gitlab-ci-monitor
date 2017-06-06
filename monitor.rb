@@ -3,16 +3,17 @@
 require 'arduino_firmata'
 require 'colorize'
 require 'dotenv'
-require 'httparty'
+require 'json'
 require 'logger'
+require 'net/http'
 require 'null_logger'
+require 'uri'
 
 Dotenv.load
 
 # Fetches build info from Gitlab API.
 class BuildFetcher
-  include HTTParty
-  base_uri 'https://gitlab.com/api/v3'
+  BASE_URI = 'https://gitlab.com/api/v3'
 
   GITLAB_API_PRIVATE_TOKEN = ENV.fetch('GITLAB_API_PRIVATE_TOKEN')
   GITLAB_PROJECT_ID = ENV.fetch('GITLAB_PROJECT_ID')
@@ -21,23 +22,28 @@ class BuildFetcher
 
   def initialize(logger = nil)
     @logger = logger || NullLogger.new
-    @options = {
-      headers: {
-        'PRIVATE-TOKEN' => GITLAB_API_PRIVATE_TOKEN
-      }
-    }
-    @project_id = GITLAB_PROJECT_ID
+    @uri = URI "#{BASE_URI}/projects/#{GITLAB_PROJECT_ID}/pipelines"
   end
 
   def latest_build(branch = 'develop')
     @logger.info { 'Fetching pipelines ...' }
-    pipelines = self.class.get "/projects/#{@project_id}/pipelines", @options
 
-    if pipelines.code != 200
-      @logger.debug pipelines.inspect.light_yellow
-      message = "#{pipelines.message.red} (#{pipelines.code.to_s.red}): #{pipelines.body.underline}"
+    response = Net::HTTP.start(@uri.host, @uri.port, use_ssl: true) do |http|
+      request = Net::HTTP::Get.new @uri
+      request.add_field 'PRIVATE-TOKEN', GITLAB_API_PRIVATE_TOKEN
+
+      http.request request
+    end
+
+    @logger.debug { @response }
+
+    if response.code.to_i != 200
+      @logger.debug { response.body.inspect.light_yellow }
+      message = "#{response.message.red} (#{response.code.red}): #{response.body.underline}"
       raise ServerError, message
     end
+
+    pipelines = JSON.parse response.body
 
     # returned build are already sorted
     last_build = pipelines.find { |el| el['ref'] == branch }
