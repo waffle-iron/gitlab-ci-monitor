@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/dapicester/gitlab-ci-monitor.png?label=ready&title=Ready)](https://waffle.io/dapicester/gitlab-ci-monitor?utm_source=badge)
 # GitLab CI Monitor
 
 Monitor the latest build status with colored LEDs using an Arduino board
